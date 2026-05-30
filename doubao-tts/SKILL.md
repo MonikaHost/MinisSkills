@@ -1,6 +1,6 @@
 ---
 name: doubao-tts
-version: 2.0.0
+version: 2.1.0
 description: 使用豆包语音合成（Volcengine TTS）将文本转为语音文件。当用户提到"豆包TTS"、"豆包语音合成"、"doubao tts"、"火山引擎TTS"、"volcengine tts"、"语音合成"、"文字转语音"、"TTS"、"生成音频"、"朗读文字"，或任何需要调用豆包/火山引擎语音合成 API 的场景，必须触发本技能。
 ---
 
@@ -8,33 +8,42 @@ description: 使用豆包语音合成（Volcengine TTS）将文本转为语音�
 
 使用火山引擎豆包语音合成 **V3 HTTP SSE 单向流式接口**将文本转为音频文件。
 
-## 获取 AppID 和 Token
+## 获取 API Key（推荐，新版控制台）
 
 1. 登录 [火山引擎控制台](https://console.volcengine.com/speech/app)
 2. 进入 **豆包语音 → 语音合成大模型 → 应用管理**
-3. 创建应用（或使用已有应用），点击应用名称进入详情
-4. 在应用详情页底部可看到：
-   - **APP ID** → 对应 `DOUBAO_TTS_APPID`
-   - **Access Token** → 对应 `DOUBAO_TTS_TOKEN`
+3. 创建应用（或使用已有应用）
+4. 在 [API Key 管理](https://console.volcengine.com/speech/new/setting/apikeys?projectName=default) 页面获取 API Key → 对应 `DOUBAO_TTS_API_KEY`
 
-> 若尚未开通服务，需先在 [语音合成大模型](https://console.volcengine.com/speech/service/10) 页面开通后才能创建应用。
+> 若尚未开通服务，需先在 [语音合成大模型](https://console.volcengine.com/speech/service/10) 页面开通。
+
+### 旧版控制台（AppID + Token）
+
+旧版控制台应用详情页底部可获取：
+- **APP ID** → `DOUBAO_TTS_APPID`
+- **Access Token** → `DOUBAO_TTS_TOKEN`
 
 ## 环境变量
 
-| 变量名 | 说明 |
-|---|---|
-| `DOUBAO_TTS_APPID` | 控制台申请的 AppID（即 `X-Api-App-Id`） |
-| `DOUBAO_TTS_TOKEN` | Access Token（即 `X-Api-Access-Key`） |
-| `DOUBAO_TTS_RESOURCE_ID` | 资源 ID，留空由服务端自动匹配，或指定 `seed-tts-2.0` 等 |
+| 变量名 | 说明 | 推荐 |
+|---|---|---|
+| `DOUBAO_TTS_API_KEY` | API Key（新版控制台，`X-Api-Key`） | ✅ |
+| `DOUBAO_TTS_APPID` | AppID（旧版控制台，`X-Api-App-Id`） | |
+| `DOUBAO_TTS_TOKEN` | Access Token（旧版控制台，`X-Api-Access-Key`） | |
+| `DOUBAO_TTS_RESOURCE_ID` | 资源 ID，留空默认 `seed-tts-2.0` | |
 
 检查是否已配置：
 ```sh
-[ -n "$DOUBAO_TTS_APPID" ] && echo "set" || echo "not set"
-[ -n "$DOUBAO_TTS_TOKEN" ] && echo "set" || echo "not set"
+[ -n "$DOUBAO_TTS_API_KEY" ] && echo "API_KEY: set" || echo "API_KEY: not set"
+[ -n "$DOUBAO_TTS_APPID" ] && echo "APPID: set" || echo "APPID: not set"
+[ -n "$DOUBAO_TTS_TOKEN" ] && echo "TOKEN: set" || echo "TOKEN: not set"
 ```
 
-未配置时告知用户设置：
-[Set DOUBAO_TTS_APPID](minis://settings/environments?create_key=DOUBAO_TTS_APPID&create_value=) | [Set DOUBAO_TTS_TOKEN](minis://settings/environments?create_key=DOUBAO_TTS_TOKEN&create_value=) | [Set DOUBAO_TTS_RESOURCE_ID](minis://settings/environments?create_key=DOUBAO_TTS_RESOURCE_ID&create_value=seed-tts-1.0)
+未配置时告知用户设置（优先使用 API Key）：
+[Set DOUBAO_TTS_API_KEY](minis://settings/environments?create_key=DOUBAO_TTS_API_KEY&create_value=) | [Set DOUBAO_TTS_RESOURCE_ID](minis://settings/environments?create_key=DOUBAO_TTS_RESOURCE_ID&create_value=seed-tts-2.0)
+
+旧版控制台（AppID + Token）：
+[Set DOUBAO_TTS_APPID](minis://settings/environments?create_key=DOUBAO_TTS_APPID&create_value=) | [Set DOUBAO_TTS_TOKEN](minis://settings/environments?create_key=DOUBAO_TTS_TOKEN&create_value=)
 
 ## 使用方式
 
@@ -66,8 +75,11 @@ uv run --script --cache-dir /root/.cache/uv \
 ## API 说明
 
 - **接口**：`https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse`（SSE 流式）
-- **鉴权**：Header `X-Api-App-Id` + `X-Api-Access-Key`（即 AppID + Token，**非** API Key）
+- **鉴权**（二选一）：
+  - 新版控制台：Header `X-Api-Key`（API Key）
+  - 旧版控制台：Header `X-Api-App-Id` + `X-Api-Access-Key`（AppID + Token）
 - **Resource ID**：指定调用的模型版本（见下表）
+- **用量返回**：脚本默认携带 `X-Control-Require-Usage-Tokens-Return: text_words`，合成结束时返回计费字符数（`text_words`）
 
 | Resource ID | 说明 |
 |---|---|
@@ -81,7 +93,10 @@ uv run --script --cache-dir /root/.cache/uv \
 |---|---|
 | `--text` | 要合成的文本（必填） |
 | `--output` | 输出文件路径（必填） |
-| `--speaker` | 音色，默认 `BV700_streaming`（灿灿） |
+| `--api-key` | API Key（新版控制台，优先于 APPID/TOKEN） |
+| `--appid` | AppID（旧版控制台） |
+| `--token` | Access Token（旧版控制台） |
+| `--speaker` | 音色，默认 `zh_female_shuangkuaisisi_uranus_bigtts`（爽快思思 2.0） |
 | `--encoding` | 格式：`mp3`/`pcm`/`ogg_opus`，默认 `mp3` |
 | `--speech-rate` | 语速 [-50, 100]，0 为默认，100 为 2 倍速 |
 | `--loudness` | 音量 [-50, 100]，0 为默认 |
@@ -100,13 +115,13 @@ uv run --script --cache-dir /root/.cache/uv \
 | `zh_female_shuangkuaisisi_uranus_bigtts` | 爽快思思 2.0 ⭐默认 | 通用 |
 | `zh_female_cancan_uranus_bigtts` | 知性灿灿 2.0 | 角色扮演 |
 | `zh_female_tianmeixiaoyuan_uranus_bigtts` | 甜美小源 2.0 | 通用 |
-| `zh_female_vv_uranus_bigtts` | Vivi 2.0 | 通用，支持中/日/印尼/西语 |
+| `zh_female_vv_uranus_bigtts` | Vivi 2.0 | 通用，中/日/印尼/墨西哥西语，方言川陕东北 |
 | `zh_female_xiaohe_uranus_bigtts` | 小何 2.0 | 通用 |
 | `zh_male_m191_uranus_bigtts` | 云舟 2.0 | 通用 |
 | `zh_male_taocheng_uranus_bigtts` | 小天 2.0 | 通用 |
 | `zh_female_kefunvsheng_uranus_bigtts` | 暖阳女声 2.0 | 客服 |
-| `en_female_dacey_uranus_bigtts` | Dacey | 美式英语 |
-| `en_male_tim_uranus_bigtts` | Tim | 美式英语 |
+| `en_female_dacey_uranus_bigtts` | Dacey | 多语种（英） |
+| `en_male_tim_uranus_bigtts` | Tim | 多语种（英） |
 
 ### 豆包语音合成模型 1.0（`seed-tts-1.0`，需改 `--resource-id`）
 
@@ -126,6 +141,6 @@ uv run --script --cache-dir /root/.cache/uv \
 
 ## 完整工作流
 
-1. 检查环境变量是否配置（APPID + TOKEN）
+1. 检查环境变量是否配置（优先 `DOUBAO_TTS_API_KEY`，其次 `DOUBAO_TTS_APPID` + `DOUBAO_TTS_TOKEN`）
 2. 调用 `tts.py` 脚本生成音频文件到 `/var/minis/workspace/`
 3. 以 `minis://workspace/xxx.mp3` 链接形式返回给用户，可直接点击播放

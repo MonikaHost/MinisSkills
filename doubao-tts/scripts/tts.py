@@ -7,7 +7,7 @@
 Doubao TTS - 豆包语音合成脚本（V3 HTTP SSE 单向流式接口）
 文档：https://www.volcengine.com/docs/6561/1598757
 接口：https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse
-鉴权：X-Api-App-Id + X-Api-Access-Key Header（即 AppID + Token）
+鉴权：新版控制台使用 X-Api-Key（API Key）；旧版控制台使用 X-Api-App-Id + X-Api-Access-Key
 """
 
 import argparse
@@ -22,11 +22,28 @@ import urllib.error
 API_URL = "https://openspeech.bytedance.com/api/v3/tts/unidirectional/sse"
 
 
+def resolve_auth(api_key: str, appid: str, token: str) -> tuple[dict, str]:
+    """解析鉴权凭证：返回 (鉴权 headers, 模式描述)。凭证缺失则报错退出。
+
+    优先级：API Key（新版控制台）> AppID + Token（旧版控制台）。
+    """
+    if api_key:
+        return {"X-Api-Key": api_key}, "API Key (新版控制台)"
+    if appid and token:
+        return (
+            {"X-Api-App-Id": appid, "X-Api-Access-Key": token},
+            "AppID + Token (旧版控制台)",
+        )
+    print("[ERROR] 未设置凭证。请通过以下任一方式提供：", file=sys.stderr)
+    print("  - --api-key 参数 或 DOUBAO_TTS_API_KEY 环境变量（推荐，新版控制台）", file=sys.stderr)
+    print("  - --appid + --token 参数 或 DOUBAO_TTS_APPID + DOUBAO_TTS_TOKEN（旧版控制台）", file=sys.stderr)
+    sys.exit(1)
+
+
 def synthesize(
     text: str,
     output_path: str,
-    appid: str,
-    token: str,
+    auth_headers: dict,
     resource_id: str = "seed-tts-2.0",
     speaker: str = "zh_female_shuangkuaisisi_uranus_bigtts",
     fmt: str = "mp3",
@@ -62,11 +79,13 @@ def synthesize(
     }
 
     headers = {
-        "X-Api-App-Id": appid,
-        "X-Api-Access-Key": token,
         "X-Api-Resource-Id": resource_id or "seed-tts-2.0",
         "X-Api-Request-Id": req_id,
+        # 请求服务端在结束帧返回用量数据（计费字符数 text_words），否则默认不返回
+        "X-Control-Require-Usage-Tokens-Return": "text_words",
         "Content-Type": "application/json",
+        # 鉴权 header：X-Api-Key 或 X-Api-App-Id + X-Api-Access-Key，由 resolve_auth 决定
+        **auth_headers,
     }
 
     data = json.dumps(payload).encode("utf-8")
@@ -145,6 +164,11 @@ def _handle_error(code: int, msg: str):
         print("[HINT] 音色未授权，请在控制台购买或使用免费音色。", file=sys.stderr)
     elif "exceed max limit" in msg:
         print("[HINT] 文本长度超限，请缩短文本。", file=sys.stderr)
+    elif code == 55000000:
+        # 服务端通用错误：高频原因是音色与 Resource ID 代次不匹配
+        # （2.0 音色须配 seed-tts-2.0，1.0 音色须配 seed-tts-1.0），也可能是服务端临时异常
+        print("[HINT] 服务端错误。请检查音色与 Resource ID 是否匹配"
+              "（2.0 音色配 seed-tts-2.0，1.0 音色配 seed-tts-1.0），或稍后重试。", file=sys.stderr)
     sys.exit(1)
 
 
@@ -153,14 +177,17 @@ def main():
         description="豆包语音合成 CLI（火山引擎 V3 HTTP SSE 单向流式接口）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-示例：
+示例（新版控制台，使用 API Key）：
   uv run --script --cache-dir /root/.cache/uv tts.py --text "你好世界" --output /tmp/hello.mp3
   uv run --script --cache-dir /root/.cache/uv tts.py --text "今天天气真好" --speaker zh_female_cancan_uranus_bigtts --output /tmp/out.mp3
-  uv run --script --cache-dir /root/.cache/uv tts.py --text "Hello!" --speaker en_female_dacey_uranus_bigtts --output /tmp/en.mp3
+
+示例（旧版控制台，使用 AppID + Token）：
+  uv run --script --cache-dir /root/.cache/uv tts.py --text "你好世界" --appid 123 --token xxx --output /tmp/hello.mp3
 
 环境变量（优先级低于命令行参数）：
-  DOUBAO_TTS_APPID       AppID（X-Api-App-Id）
-  DOUBAO_TTS_TOKEN       Access Token（X-Api-Access-Key）
+  DOUBAO_TTS_API_KEY     API Key（新版控制台，推荐）
+  DOUBAO_TTS_APPID       AppID（旧版控制台，X-Api-App-Id）
+  DOUBAO_TTS_TOKEN       Access Token（旧版控制台，X-Api-Access-Key）
   DOUBAO_TTS_RESOURCE_ID Resource ID（留空默认用 seed-tts-2.0）
 
 Resource ID 说明：
@@ -174,10 +201,12 @@ Resource ID 说明：
     )
     parser.add_argument("--text", required=True, help="要合成的文本")
     parser.add_argument("--output", required=True, help="输出音频文件路径（如 /tmp/out.mp3）")
-    parser.add_argument("--appid", default=None, help="AppID（优先于环境变量）")
-    parser.add_argument("--token", default=None, help="Access Token（优先于环境变量）")
+    parser.add_argument("--api-key", default=None,
+                        help="API Key（新版控制台，优先于 APPID/TOKEN）")
+    parser.add_argument("--appid", default=None, help="AppID（旧版控制台，优先于环境变量）")
+    parser.add_argument("--token", default=None, help="Access Token（旧版控制台，优先于环境变量）")
     parser.add_argument("--resource-id", default=None,
-                        help="Resource ID（默认 seed-tts-1.0）")
+                        help="Resource ID（默认 seed-tts-2.0）")
     parser.add_argument("--speaker", default="zh_female_shuangkuaisisi_uranus_bigtts",
                         help="音色 speaker（默认 zh_female_shuangkuaisisi_uranus_bigtts 爽快思思 2.0）")
     parser.add_argument("--encoding", default="mp3",
@@ -201,24 +230,19 @@ Resource ID 说明：
     args = parser.parse_args()
 
     # 读取凭证（命令行 > 环境变量）
+    api_key = args.api_key or os.environ.get("DOUBAO_TTS_API_KEY", "")
     appid = args.appid or os.environ.get("DOUBAO_TTS_APPID", "")
     token = args.token or os.environ.get("DOUBAO_TTS_TOKEN", "")
     resource_id = args.resource_id or os.environ.get("DOUBAO_TTS_RESOURCE_ID", "")
 
-    if not appid:
-        print("[ERROR] 未设置 AppID。请通过 --appid 参数或 DOUBAO_TTS_APPID 环境变量提供。", file=sys.stderr)
-        sys.exit(1)
-    if not token:
-        print("[ERROR] 未设置 Token。请通过 --token 参数或 DOUBAO_TTS_TOKEN 环境变量提供。", file=sys.stderr)
-        sys.exit(1)
+    auth_headers, auth_mode = resolve_auth(api_key, appid, token)
 
-    print(f"[INFO] 合成中... speaker={args.speaker} format={args.encoding} speech_rate={args.speech_rate}", file=sys.stderr)
+    print(f"[INFO] 合成中... speaker={args.speaker} format={args.encoding} speech_rate={args.speech_rate} auth={auth_mode}", file=sys.stderr)
 
     result = synthesize(
         text=args.text,
         output_path=args.output,
-        appid=appid,
-        token=token,
+        auth_headers=auth_headers,
         resource_id=resource_id,
         speaker=args.speaker,
         fmt=args.encoding,
