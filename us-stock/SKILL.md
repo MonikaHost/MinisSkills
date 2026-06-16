@@ -11,11 +11,11 @@ Google Finance（browser_use navigate + get_text）——无需API，无需登�
 
 ## 查询流程
 
-### Step 0：设置桌面端UA
+### Step 0：设置桌面端视窗
 ```
-browser_use set_user_agent desktop_chrome
+browser_use set_viewport viewport_width: 1280 viewport_height: 800
 ```
-否则移动端页面可能不显示完整行情数据。
+Google Finance 区分桌面/移动版主要靠 viewport 宽度，设置足够宽的视窗即可拿到完整数据。此方法跨 Android/iOS 兼容，不受 UA 枚举值差异影响。
 
 ### Step 1：三大指数（并行，最多同时开3个tab）
 先用默认 tab 0 打开标普：
