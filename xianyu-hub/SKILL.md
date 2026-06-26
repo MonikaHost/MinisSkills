@@ -17,30 +17,19 @@ description: >
 
 ## 启动流程（每次使用前执行）
 
-全程用 `minis-browser-use` CLI。
+所有脚本都会**自动调用 `ensure_tab.sh`** 完成以下步骤，**无需手动传 `--tab-id`**。
 
-### Step 1：确保浏览器有闲鱼 tab
+### ensure_tab.sh 自动处理逻辑
 
-```sh
-minis-browser-use list_tabs --compact -q  # 看有没有 goofish.com
-# 没有则：
-minis-browser-use navigate --url "https://www.goofish.com"
-```
+1. **扫描所有 tab** — 解析 `list_tabs` 文本，找含 `goofish.com` 的 tab
+2. **检查登录态** — 执行 JS 判断当前页是否已登录
+3. **已登录** → 直接输出 tab_id，脚本继续执行
+4. **未登录** → 自动执行：
+   - `navigate` 跳转到闲鱼首页
+   - `minis-open` 弹出内置浏览器供用户登录
+   - **每 5 秒轮询登录状态，最多等 120 秒**，登录成功自动继续
 
-### Step 2：检查登录状态
-
-```sh
-minis-browser-use execute_js --tab-id <id> \
-  --script 'return window.location.href.includes("passport") ? "not_login" : (window.lib && window.lib.mtop ? "ok" : "loading")' \
-  --compact -q
-```
-
-- `"ok"` → 已登录，执行操作
-- 其他 → 未登录，执行：
-  ```sh
-  minis-open https://www.goofish.com
-  ```
-  并告知用户：「闲鱼尚未登录，已打开内置浏览器，请完成登录后告诉我 🐟」
+> 若需手动指定 tab，可传 `--tab-id <id>`，脚本仍会验证登录态。
 
 ## 脚本一览
 
@@ -119,3 +108,5 @@ apple-open "fleamarket://item?id=<商品ID>"    # 跳转闲鱼 APP
 - 城市/价格区间为客户端过滤
 - `--personal-only` 按评价数判断（>10条视为店铺），不绝对准确
 - 敏感词被平台屏蔽时返回空结果，属正常现象
+- `ensure_tab.sh` 依赖 `list_tabs` 返回文本格式（`Tab N: 标题 — URL`），格式变更需同步更新解析逻辑
+- 未登录时 `ensure_tab.sh` 会自动轮询等待，**无需用户手动确认登录**，等待期间脚本会阻塞（最多 120 秒）
