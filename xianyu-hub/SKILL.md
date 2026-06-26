@@ -1,8 +1,8 @@
 ---
 name: xianyu-hub
 description: >
-  闲鱼（咸鱼/goofish）二手商品搜索与查询技能。通过在已登录的浏览器页面内调用
-  mtop API，无需 Cookie/签名即可搜索商品、查询价格行情、筛选城市/价格区间/排序。
+  闲鱼（咸鱼/goofish）二手商品搜索与查询技能。支持搜索商品、查询价格行情、
+  筛选城市/价格区间/排序、查看商品详情、管理收藏、查询订单和已发布商品。
   支持输出网页链接和 fleamarket:// APP 直达链接。
   当用户提到「闲鱼」「咸鱼」「二手」「goofish」「搜一下xx多少钱」「找一下xx的商品」，
   或任何需要查询闲鱼商品价格/搜索二手商品的场景，必须触发本技能。
@@ -12,8 +12,8 @@ description: >
 
 ## 核心原理
 
-在已登录闲鱼的浏览器 tab 内通过 `minis-browser-use execute_js` 调用 `window.lib.mtop.request()`，
-天然复用登录态，无需签名或 Cookie 管理。
+在已登录闲鱼的浏览器 tab 内通过 `minis-browser-use execute_js` 调用闲鱼内部 API，
+需要用户先在内置浏览器中完成闲鱼登录。
 
 ## 启动流程（每次使用前执行）
 
