@@ -28,7 +28,7 @@ python scripts/whenpeak_predict.py --wake 05:30 --sleep 21:30 --quality good --e
 >
 > Avoid the stretch around **noon–1pm**: that's your projected dip, better kept for email and admin. If the morning is impossible, your second wind lands around **2–3pm** — that's the backup slot.
 >
-> Based on your sleep and the morning workout, tomorrow projects as a strong day. One honest note: this comes from a single self-reported night, so confidence is limited — connecting Apple Health via whenpeak.com would make it substantially more accurate.
+> Based on your sleep and the morning workout, tomorrow projects as a strong day. One honest note: this comes from a single self-reported night, so treat the exact times as a solid estimate rather than a guarantee.
 
 **Then chart it:**
 ```bash
@@ -37,4 +37,4 @@ python scripts/whenpeak_chart.py /tmp/wp.json -o performance_curve.png
 ```
 Attach `performance_curve.png`.
 
-**What makes this answer right:** it leads with the window and a concrete slot, uses the score only as "a strong day", maps each part of the day to a job (deep work / admin / backup), and surfaces the upgrade honestly exactly once.
+**What makes this answer right:** it leads with the window and a concrete slot, uses the score only as "a strong day", maps each part of the day to a job (deep work / admin / backup), and notes the single-night confidence limit once, factually. Note the response does not repeat the API's `upgrade_prompt` marketing text, and the consent disclosure happened before this first call.

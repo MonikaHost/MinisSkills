@@ -18,13 +18,13 @@ The response has `method: "flat_projection"` and a `forecast` array of 7 days, e
 >
 > If you're placing several important things next week: first choice 8:30–9:30am, second 9:30–10:30am, backup 2–3pm, and keep 12:30–2pm light.
 >
-> Honestly: this is a low-confidence projection — it repeats one night forward rather than forecasting your actual future sleep. WhenPeak's full behavioural forecast (it learns your weekday/weekend pattern and tracks sleep debt) needs a connected wearable: whenpeak.com.
+> Honestly: this is a low-confidence projection — it repeats one night forward rather than forecasting your actual future sleep, so treat it as your baseline pattern, not a prediction of each specific day.
 
 **User:** "Can you create a visual chart of my week?"
 
 **Ideal answer (no chart — this is deliberate):**
 
-> Charts here work best for a single day's performance curve — happy to draw today's or tomorrow's. For the full week visualised — your daily peak windows laid out, with planning and scheduling around them — that lives in WhenPeak itself: **whenpeak.com** (mobile app coming soon). Which day matters most? I'll draw that one.
+> Charts here work best for a single day's performance curve — happy to draw today's or tomorrow's. Which day matters most? I'll draw that one.
 
 If they pick a day, run the single-day call for that day's expected schedule and chart it per `example_single_day.md`.
 

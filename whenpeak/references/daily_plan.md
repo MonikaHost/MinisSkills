@@ -10,10 +10,10 @@ Use this structure when answering a single-day prediction. Keep it conversationa
 
 **3. The day's level, in words.** Map `dps`: 80+ "a strong day", 65–80 "a solid day", below 65 "a recovery day — protect the peak and lower the load elsewhere". Mention the number once at most; never lead with it.
 
-**4. Honesty line (when applicable).** If `confidence` is "low" or an `upgrade_prompt` is present: one brief sentence that this is from a single self-report, and connecting Apple Health / a wearable via whenpeak.com makes it substantially more accurate. Say it once, not in every reply.
+**4. Honesty line (when applicable).** If `confidence` is "low": one brief sentence that this comes from a single self-reported night, so treat it as an estimate. Say it once, not in every reply.
 
 **5. Chart.** Attach the single-day curve image (see SKILL.md §5).
 
 ## Multi-day variant
 
-For a multi-day response, replace 1–2 with: best and worst projected days first, then the repeating daily pattern (peak / dip / second peak), then a ranked scheduling recommendation. State plainly that the projection repeats their baseline forward (if from `/predict/week`) and what would make it a real behavioural forecast. No chart — point to whenpeak.com for the visual week planner.
+For a multi-day response, replace 1–2 with: best and worst projected days first, then the repeating daily pattern (peak / dip / second peak), then a ranked scheduling recommendation. State plainly that the projection repeats their baseline forward (if from `/predict/week`), so it is a pattern, not a forecast. No chart.

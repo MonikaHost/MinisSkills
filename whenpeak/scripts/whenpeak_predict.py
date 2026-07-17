@@ -46,7 +46,7 @@ def call_api(path: str, payload: dict, timeout: float = 20.0) -> dict:
     req = urllib.request.Request(
         API_URL + path,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "User-Agent": "whenpeak-skill-minis/1.0"},
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
