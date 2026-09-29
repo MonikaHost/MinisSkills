@@ -1,6 +1,6 @@
 ---
 name: shortcut-share-file
-version: 2.1.0
+version: 2.1.1
 description: 通过 iOS 快捷指令「极速分享」分享 iCloud Drive 文件。当用户提到"分享文件"、"传文件"、"发文件"、"分享给xxx"、"用快捷指令分享"、"发备份里的文件"等与分享文件相关的操作时触发。支持传递 iCloud Drive 备份目录下的任意文件路径给快捷指令。
 ---
 
@@ -29,7 +29,7 @@ cp <源文件路径> /var/minis/mounts/iCloud/极速分享/<filename>
 
 ### B. 等待上传完成（仅新拷贝的文件需要）
 
-刚拷贝进来的文件用监控脚本等待上传真正完成（检测 ctime 跳变信号——小文件约 8-10 秒；大文件按约 4MB/s 递增）：
+刚拷贝进来的文件用监控脚本等待上传真正完成（检测 ctime 跳变信号）：
 
 ```
 bash /var/minis/skills/shortcut-share-file/scripts/icloud_upload_watch.sh "极速分享/<filename>"
